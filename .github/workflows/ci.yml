@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: linklist_test
+          POSTGRES_USER: linklist
+          POSTGRES_PASSWORD: linklist
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U linklist -d linklist_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://linklist:linklist@localhost:5432/linklist_test?schema=public
+      NODE_ENV: test
+      AUTH_MODE: test
+      SIGNUP_TICKET_SECRET: ci-only-signup-secret-with-at-least-32-characters
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run prisma:generate --workspace=backend
+      - run: npm run prisma:migrate:deploy --workspace=backend
+      - run: npm run verify

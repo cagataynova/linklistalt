@@ -1,0 +1,11 @@
+node_modules/
+coverage/
+*.log
+.next/
+dist/
+*.tsbuildinfo
+.env
+.env.local
+.env.*.local
+!.env.example
+.neon

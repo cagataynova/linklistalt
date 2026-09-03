@@ -1,14 +1,9 @@
-import type { Metadata } from "next";
-import "./globals.css";
+import type { Metadata } from 'next';
+import { AuthProvider } from '@/components/auth-provider';
+import { SiteHeader } from '@/components/site-header';
+import './globals.css';
 
-export const metadata: Metadata = {
-  title: "Benim Listelerim",
-  description: "Beğendiğin ürünleri topla, düzenle ve kendi profilinde paylaş.",
-  openGraph: { title: "Benim Listelerim", description: "Beğendiklerin sana ait bir yerde.", type: "website", images: ["/og.png"] },
-  twitter: { card: "summary_large_image", title: "Benim Listelerim", description: "Beğendiklerin sana ait bir yerde.", images: ["/og.png"] },
-  icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
-};
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
+export const metadata: Metadata = { metadataBase: new URL(siteUrl), title: { default: 'LinkList', template: '%s · LinkList' }, description: 'Beğendiğin ürünleri topla, düzenle ve kendi profilinde paylaş.', openGraph: { title: 'LinkList', description: 'Beğendiklerin sana ait bir yerde.', type: 'website' }, twitter: { card: 'summary_large_image' } };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="tr"><body>{children}</body></html>;
-}
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) { return <html lang="tr"><body><AuthProvider><SiteHeader />{children}</AuthProvider></body></html>; }
