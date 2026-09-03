@@ -27,6 +27,10 @@ services:
         generateValue: true
       - key: R2_ENDPOINT
         sync: false
+      - key: R2_REGION
+        value: auto
+      - key: R2_BUCKET
+        value: linklist-beta-images
       - key: R2_ACCESS_KEY_ID
         sync: false
       - key: R2_SECRET_ACCESS_KEY
