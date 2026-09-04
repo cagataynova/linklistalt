@@ -8,7 +8,12 @@ const AuthContext = createContext<{ user: User | null; loading: boolean }>({ use
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null); const [loading, setLoading] = useState(isFirebaseConfigured);
-  useEffect(() => isFirebaseConfigured ? onAuthStateChanged(auth, (current) => { setUser(current); setLoading(false); }) : undefined, []);
+  useEffect(() => {
+    if (!isFirebaseConfigured) return;
+    const fallback = window.setTimeout(() => setLoading(false), 8000);
+    const unsubscribe = onAuthStateChanged(auth, (current) => { window.clearTimeout(fallback); setUser(current); setLoading(false); });
+    return () => { window.clearTimeout(fallback); unsubscribe(); };
+  }, []);
   const value = useMemo(() => ({ user, loading }), [user, loading]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
