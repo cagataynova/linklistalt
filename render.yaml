@@ -3,7 +3,7 @@ services:
     name: linklist-api
     runtime: node
     plan: free
-    buildCommand: npm ci && npm run prisma:generate --workspace=backend && npm run build --workspace=backend
+    buildCommand: npm ci --include=dev && npm run prisma:generate --workspace=backend && npm run build --workspace=backend
     startCommand: npm run prisma:migrate:deploy --workspace=backend && npm run start:prod --workspace=backend
     healthCheckPath: /api/v1/health/ready
     envVars:
