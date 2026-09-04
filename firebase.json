@@ -1,6 +1,6 @@
 {
   "auth": {
-    "authorizedDomains": ["localhost"],
+    "authorizedDomains": ["localhost", "linklist-beta-cnin.netlify.app"],
     "providers": {
       "anonymous": false,
       "emailPassword": true,

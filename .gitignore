@@ -9,3 +9,6 @@ dist/
 .env.*.local
 !.env.example
 .neon
+
+# Local Netlify folder
+.netlify
