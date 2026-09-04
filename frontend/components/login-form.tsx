@@ -1,14 +1,126 @@
-'use client';
+"use client";
 
-import { GoogleAuthProvider, sendPasswordResetEmail, signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
-import { useRouter } from 'next/navigation';
-import { FormEvent, useState } from 'react';
-import { auth } from '@/lib/firebase';
+import {
+  GoogleAuthProvider,
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+} from "firebase/auth";
+import { useRouter } from "next/navigation";
+import { FormEvent, useState } from "react";
+import { auth } from "@/lib/firebase";
 
 export function LoginForm() {
-  const router = useRouter(); const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const [message, setMessage] = useState(''); const [busy, setBusy] = useState(false);
-  async function submit(event: FormEvent) { event.preventDefault(); setBusy(true); setMessage(''); try { await signInWithEmailAndPassword(auth, email, password); router.push('/dashboard'); } catch { setMessage('E-posta veya parola doğrulanamadı.'); } finally { setBusy(false); } }
-  async function google() { setBusy(true); try { await signInWithPopup(auth, new GoogleAuthProvider()); router.push('/dashboard'); } catch { setMessage('Google ile giriş tamamlanamadı.'); } finally { setBusy(false); } }
-  async function reset() { if (!email) return setMessage('Önce e-posta adresini yaz.'); await sendPasswordResetEmail(auth, email); setMessage('Parola yenileme bağlantısı gönderildi.'); }
-  return <form className="auth-card" onSubmit={submit}><div className="eyebrow">TEKRAR HOŞ GELDİN</div><h1>Hesabına gir</h1><label>E-posta<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" /></label><label>Parola<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" /></label>{message && <p className="form-message" role="status">{message}</p>}<button className="primary-button" disabled={busy}>{busy ? 'Giriş yapılıyor…' : 'Giriş yap'}</button><button type="button" className="secondary-button" onClick={google} disabled={busy}>Google ile devam et</button><button type="button" className="text-button" onClick={reset}>Parolamı unuttum</button></form>;
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    setBusy(true);
+    setMessage("");
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      router.push("/dashboard");
+    } catch {
+      setMessage("E-posta veya parola doğrulanamadı.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function google() {
+    setBusy(true);
+    setMessage("");
+    try {
+      await signInWithPopup(auth, new GoogleAuthProvider());
+      router.push("/dashboard");
+    } catch {
+      setMessage("Google ile giriş tamamlanamadı.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function reset() {
+    if (!email) {
+      setMessage("Önce e-posta adresini yaz.");
+      return;
+    }
+    setBusy(true);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setMessage("Parola yenileme bağlantısı gönderildi.");
+    } catch {
+      setMessage("Parola yenileme bağlantısı gönderilemedi.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form className="auth-card" onSubmit={submit}>
+      <header className="auth-heading">
+        <div className="eyebrow">TEKRAR HOŞ GELDİN</div>
+        <h1>Hesabına gir</h1>
+        <p>Listelerine kaldığın yerden devam et.</p>
+      </header>
+      <div className="auth-fields">
+        <label>
+          E-posta
+          <input
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            required
+            autoComplete="email"
+            placeholder="ornek@eposta.com"
+          />
+        </label>
+        <label>
+          Parola
+          <input
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            required
+            autoComplete="current-password"
+            placeholder="Parolan"
+          />
+        </label>
+      </div>
+      {message && (
+        <p className="form-message" role="status" aria-live="polite">
+          {message}
+        </p>
+      )}
+      <button className="primary-button auth-submit" disabled={busy}>
+        {busy ? "Giriş yapılıyor…" : "Giriş yap"}
+      </button>
+      <div className="auth-divider" aria-hidden="true">
+        <span>veya</span>
+      </div>
+      <button
+        type="button"
+        className="secondary-button auth-google"
+        onClick={google}
+        disabled={busy}
+      >
+        <span className="google-mark" aria-hidden="true">
+          G
+        </span>
+        Google ile devam et
+      </button>
+      <button
+        type="button"
+        className="text-button auth-reset"
+        onClick={reset}
+        disabled={busy}
+      >
+        Parolamı unuttum
+      </button>
+    </form>
+  );
 }
