@@ -19,9 +19,25 @@ export class AppUserGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     await this.identityGuard.canActivate(context);
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
-    const user = await this.prisma.user.findUnique({
+    let user = await this.prisma.user.findUnique({
       where: { firebaseUid: request.identity.uid },
     });
+    if (!user && request.identity.emailVerified) {
+      await this.prisma.user.updateMany({
+        where: {
+          email: request.identity.email,
+          firebaseUid: { startsWith: 'pending:' },
+          status: UserStatus.ACTIVE,
+        },
+        data: {
+          firebaseUid: request.identity.uid,
+          emailVerified: true,
+        },
+      });
+      user = await this.prisma.user.findUnique({
+        where: { firebaseUid: request.identity.uid },
+      });
+    }
     if (!user)
       throw new UnauthorizedException('LinkList hesabı henüz oluşturulmamış.');
     if (user.status !== UserStatus.ACTIVE)
