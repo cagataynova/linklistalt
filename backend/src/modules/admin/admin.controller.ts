@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -17,6 +18,7 @@ import { Roles, RolesGuard } from '../auth/roles';
 import {
   AdminCreateInviteDto,
   ModerateDto,
+  UpdateUserRoleDto,
   UpdateUserStatusDto,
 } from './admin.dto';
 import { AdminService } from './admin.service';
@@ -55,5 +57,24 @@ export class AdminController {
     @Body() dto: UpdateUserStatusDto,
   ) {
     return this.admin.updateUser(user, id, dto).then(apiResponse);
+  }
+  @Roles(UserRole.ADMIN) @Patch('users/:id/role') updateUserRole(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+    @Body() dto: UpdateUserRoleDto,
+  ) {
+    return this.admin.updateUserRole(user, id, dto).then(apiResponse);
+  }
+  @Roles(UserRole.ADMIN) @Post('users/:id/password-reset') passwordReset(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+  ) {
+    return this.admin.authorizePasswordReset(user, id).then(apiResponse);
+  }
+  @Roles(UserRole.ADMIN) @Delete('users/:id') removeUser(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+  ) {
+    return this.admin.deleteUser(user, id).then(apiResponse);
   }
 }
