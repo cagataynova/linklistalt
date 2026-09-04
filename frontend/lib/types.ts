@@ -7,5 +7,5 @@ export type Profile = { id: string; username: string; displayName: string; bio?:
 export type Me = { id: string; email: string; role: 'USER' | 'MODERATOR' | 'ADMIN'; profile: Omit<Profile, 'user'> };
 export type ExtractedProduct = { name?: string; brand?: string; price?: string; currency: string; sourceUrl: string; images: string[] };
 export type AdminInvite = { id: string; prefix: string; label?: string | null; maxUses: number; useCount: number; active: boolean; expiresAt?: string | null };
-export type AdminUser = { id: string; email: string; role: Me['role']; status: 'ACTIVE' | 'SUSPENDED' | 'DELETED'; profile?: { username: string; displayName: string } | null };
+export type AdminUser = { id: string; email: string; emailVerified: boolean; role: Me['role']; status: 'ACTIVE' | 'SUSPENDED' | 'DELETED'; createdAt: string; profile?: { username: string; displayName: string; avatarUrl?: string | null } | null };
 export type Report = { id: string; reason: string; details?: string | null; status: string; targetType: string; targetId: string; reporter: { email: string; profile?: { username: string } | null } };

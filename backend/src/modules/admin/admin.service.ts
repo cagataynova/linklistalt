@@ -8,14 +8,17 @@ import {
   ModerationActionType,
   Prisma,
   ReportTargetType,
+  UserRole,
   UserStatus,
   type User,
 } from '@prisma/client';
 import { createHash, randomBytes } from 'crypto';
 import { PrismaService } from '../../database/prisma.service';
+import { AuthService } from '../auth/auth.service';
 import type {
   AdminCreateInviteDto,
   ModerateDto,
+  UpdateUserRoleDto,
   UpdateUserStatusDto,
 } from './admin.dto';
 
@@ -24,7 +27,10 @@ const hash = (value: string) =>
 
 @Injectable()
 export class AdminService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly auth: AuthService,
+  ) {}
   async createInvite(actor: User, dto: AdminCreateInviteDto) {
     const code = `LL-${randomBytes(6).toString('hex').toUpperCase()}`;
     const invite = await this.prisma.inviteCode.create({
@@ -83,7 +89,17 @@ export class AdminService {
       take: 51,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       orderBy: { createdAt: 'desc' },
-      include: { profile: true },
+      select: {
+        id: true,
+        email: true,
+        emailVerified: true,
+        role: true,
+        status: true,
+        createdAt: true,
+        profile: {
+          select: { username: true, displayName: true, avatarUrl: true },
+        },
+      },
     });
   }
   async moderate(actor: User, dto: ModerateDto) {
@@ -113,8 +129,11 @@ export class AdminService {
     return action;
   }
   async updateUser(actor: User, userId: string, dto: UpdateUserStatusDto) {
+    const target = await this.getManageableUser(userId);
     if (actor.id === userId && dto.status !== UserStatus.ACTIVE)
       throw new BadRequestException('Kendi hesabınızı askıya alamazsınız.');
+    if (dto.status !== UserStatus.ACTIVE)
+      await this.assertAdminRemains(target, false);
     const user = await this.prisma.user.update({
       where: { id: userId },
       data: { status: dto.status },
@@ -132,6 +151,57 @@ export class AdminService {
       note: dto.note,
     });
     return user;
+  }
+  async updateUserRole(actor: User, userId: string, dto: UpdateUserRoleDto) {
+    const target = await this.getManageableUser(userId);
+    if (actor.id === userId && dto.role !== UserRole.ADMIN)
+      throw new BadRequestException('Kendi admin yetkinizi kaldıramazsınız.');
+    await this.assertAdminRemains(target, dto.role === UserRole.ADMIN);
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: { role: dto.role },
+      include: { profile: true },
+    });
+    await this.audit(actor.id, 'USER_ROLE_UPDATED', 'USER', userId, {
+      previousRole: target.role,
+      role: dto.role,
+    });
+    return user;
+  }
+  async authorizePasswordReset(actor: User, userId: string) {
+    const target = await this.getManageableUser(userId);
+    await this.audit(actor.id, 'PASSWORD_RESET_REQUESTED', 'USER', userId, {
+      email: target.email,
+    });
+    return { email: target.email };
+  }
+  async deleteUser(actor: User, userId: string) {
+    if (actor.id === userId)
+      throw new BadRequestException(
+        'Kendi hesabınızı yönetim panelinden silemezsiniz.',
+      );
+    const target = await this.getManageableUser(userId);
+    await this.assertAdminRemains(target, false);
+    await this.auth.deleteAccount(target);
+    await this.audit(actor.id, 'USER_DELETED', 'USER', userId, {
+      previousRole: target.role,
+      previousStatus: target.status,
+    });
+    return { deleted: true };
+  }
+  private async getManageableUser(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user || user.status === UserStatus.DELETED)
+      throw new NotFoundException('Kullanıcı bulunamadı.');
+    return user;
+  }
+  private async assertAdminRemains(target: User, remainsAdmin: boolean) {
+    if (target.role !== UserRole.ADMIN || remainsAdmin) return;
+    const activeAdmins = await this.prisma.user.count({
+      where: { role: UserRole.ADMIN, status: UserStatus.ACTIVE },
+    });
+    if (target.status === UserStatus.ACTIVE && activeAdmins <= 1)
+      throw new BadRequestException('Son aktif admin kaldırılamaz.');
   }
   private statusForAction(action: ModerationActionType) {
     if (action === 'HIDE') return ContentStatus.HIDDEN;

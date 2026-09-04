@@ -2,6 +2,7 @@ import {
   ModerationActionType,
   ReportStatus,
   ReportTargetType,
+  UserRole,
   UserStatus,
 } from '@prisma/client';
 import {
@@ -31,4 +32,8 @@ export class ModerateDto {
 export class UpdateUserStatusDto {
   @IsEnum(UserStatus) status!: UserStatus;
   @IsOptional() @IsString() @MaxLength(500) note?: string;
+}
+
+export class UpdateUserRoleDto {
+  @IsEnum(UserRole) role!: UserRole;
 }
