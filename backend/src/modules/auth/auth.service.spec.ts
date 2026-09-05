@@ -7,9 +7,17 @@ jest.mock('./firebase.service', () => ({
 }));
 
 describe('AuthService invite quota', () => {
+  const signupTicketCreate = jest.fn(
+    (input: {
+      data: { tokenHash: string; inviteCodeId: string; expiresAt: Date };
+    }) => {
+      void input;
+      return Promise.resolve({});
+    },
+  );
   const prisma = {
     inviteCode: { findUnique: jest.fn() },
-    signupTicket: { create: jest.fn() },
+    signupTicket: { create: signupTicketCreate },
   };
   const config = {
     getOrThrow: jest.fn().mockReturnValue('test-secret'),
@@ -32,7 +40,8 @@ describe('AuthService invite quota', () => {
     );
     expect(prisma.signupTicket.create).not.toHaveBeenCalled();
   });
-  it('geçerli kodu açık halde saklamadan kısa ömürlü ticket üretir', async () => {
+  it('geçerli kodu açık halde saklamadan yedi günlük ticket üretir', async () => {
+    const before = Date.now();
     prisma.inviteCode.findUnique.mockResolvedValue({
       id: 'invite',
       isActive: true,
@@ -41,7 +50,14 @@ describe('AuthService invite quota', () => {
       expiresAt: null,
     });
     const result = await service.claimInvite('beta');
-    expect(result.expiresInSeconds).toBe(600);
+    expect(result.expiresInSeconds).toBe(7 * 24 * 60 * 60);
+    const createdTicket = signupTicketCreate.mock.calls[0][0];
+    expect(createdTicket.data.expiresAt.getTime()).toBeGreaterThanOrEqual(
+      before + 7 * 24 * 60 * 60 * 1_000,
+    );
+    expect(createdTicket.data.expiresAt.getTime()).toBeLessThanOrEqual(
+      Date.now() + 7 * 24 * 60 * 60 * 1_000,
+    );
     const serializedCall = JSON.stringify(
       prisma.signupTicket.create.mock.calls,
     );
