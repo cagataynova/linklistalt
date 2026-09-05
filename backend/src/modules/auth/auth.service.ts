@@ -16,6 +16,8 @@ import { StorageService } from '../storage/storage.service';
 const hash = (value: string) =>
   createHash('sha256').update(value).digest('hex');
 
+const SIGNUP_TICKET_TTL_SECONDS = 7 * 24 * 60 * 60;
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -47,10 +49,13 @@ export class AuthService {
           `${token}:${this.config.getOrThrow('SIGNUP_TICKET_SECRET')}`,
         ),
         inviteCodeId: invite.id,
-        expiresAt: new Date(Date.now() + 10 * 60_000),
+        expiresAt: new Date(Date.now() + SIGNUP_TICKET_TTL_SECONDS * 1_000),
       },
     });
-    return { signupTicket: token, expiresInSeconds: 600 };
+    return {
+      signupTicket: token,
+      expiresInSeconds: SIGNUP_TICKET_TTL_SECONDS,
+    };
   }
 
   async bootstrap(identity: AuthIdentity, dto: BootstrapDto) {
