@@ -30,6 +30,12 @@ export class ApiExceptionFilter implements ExceptionFilter {
       (exception instanceof Error
         ? exception.message
         : 'Beklenmeyen bir hata oluştu.');
+    const isServerError = status >= 500;
+    const message = isServerError
+      ? 'Sunucu isteği tamamlayamadı. Lütfen tekrar deneyin.'
+      : Array.isArray(rawMessage)
+        ? rawMessage.join(', ')
+        : rawMessage;
     this.logger.error(
       JSON.stringify({
         event: 'request.failed',
@@ -46,8 +52,8 @@ export class ApiExceptionFilter implements ExceptionFilter {
         typeof body.error === 'string'
           ? body.error.toUpperCase().replaceAll(' ', '_')
           : 'REQUEST_FAILED',
-      message: Array.isArray(rawMessage) ? rawMessage.join(', ') : rawMessage,
-      details: body.message,
+      message,
+      ...(!isServerError && body.message ? { details: body.message } : {}),
       requestId: request.requestId,
     });
   }

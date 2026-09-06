@@ -30,7 +30,7 @@ async function bootstrap(): Promise<void> {
             .replaceAll('*', '[a-zA-Z0-9-]+');
           return new RegExp(`^${expression}$`).test(origin);
         });
-      callback(allowed ? null : new Error('CORS origin rejected'), allowed);
+      callback(null, allowed);
     },
   });
   app.setGlobalPrefix('api/v1');

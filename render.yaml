@@ -3,6 +3,7 @@ services:
     name: linklist-api
     runtime: node
     plan: free
+    autoDeploy: yes
     buildCommand: npm ci --include=dev && npm run prisma:generate --workspace=backend && npm run build --workspace=backend
     startCommand: npm run prisma:migrate:deploy --workspace=backend && npm run start:prod --workspace=backend
     healthCheckPath: /api/v1/health/ready
@@ -16,7 +17,7 @@ services:
       - key: DATABASE_URL
         sync: false
       - key: FRONTEND_ORIGINS
-        sync: false
+        value: http://localhost:3000,https://linklist-beta-cnin.netlify.app,https://*--linklist-beta-cnin.netlify.app
       - key: FIREBASE_PROJECT_ID
         sync: false
       - key: FIREBASE_CLIENT_EMAIL
