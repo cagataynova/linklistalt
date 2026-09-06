@@ -8,6 +8,7 @@ import {
 } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import { ApiRequestError, authorizedApi } from "@/lib/api";
 import { auth } from "@/lib/firebase";
 
 export function LoginForm() {
@@ -17,13 +18,29 @@ export function LoginForm() {
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
+  async function continueAfterSignIn() {
+    try {
+      await authorizedApi("/me");
+      router.replace("/dashboard");
+    } catch (error) {
+      if (error instanceof ApiRequestError && error.status === 401) {
+        const hasSignupTicket = Boolean(
+          sessionStorage.getItem("linklist-signup-ticket"),
+        );
+        router.replace(hasSignupTicket ? "/onboarding" : "/invite");
+        return;
+      }
+      throw error;
+    }
+  }
+
   async function submit(event: FormEvent) {
     event.preventDefault();
     setBusy(true);
     setMessage("");
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      router.push("/dashboard");
+      await continueAfterSignIn();
     } catch {
       setMessage("E-posta veya parola doğrulanamadı.");
     } finally {
@@ -36,9 +53,13 @@ export function LoginForm() {
     setMessage("");
     try {
       await signInWithPopup(auth, new GoogleAuthProvider());
-      router.push("/dashboard");
-    } catch {
-      setMessage("Google ile giriş tamamlanamadı.");
+      await continueAfterSignIn();
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Google ile giriş tamamlanamadı.",
+      );
     } finally {
       setBusy(false);
     }
