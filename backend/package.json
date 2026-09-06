@@ -5,7 +5,7 @@
   "description": "LinkList backend API",
   "license": "UNLICENSED",
   "scripts": {
-    "build": "nest build",
+    "build": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && nest build",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write --no-error-on-unmatched-pattern \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
