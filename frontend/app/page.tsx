@@ -1,5 +1,8 @@
 import Image from "next/image";
-import Link from "next/link";
+import {
+  LandingFooterAction,
+  LandingHeroActions,
+} from "@/components/landing-actions";
 
 const steps = [
   {
@@ -32,14 +35,7 @@ export default function Home() {
             Farklı mağazalarda bulduğun ürünleri tek yerde topla. Listelerini
             kendi zevkine göre düzenle, sakla ve paylaş.
           </p>
-          <div className="hero-actions">
-            <Link className="primary-button" href="/invite">
-              Davet koduyla katıl
-            </Link>
-            <Link className="secondary-button" href="/login">
-              Hesabına gir
-            </Link>
-          </div>
+          <LandingHeroActions />
           <div className="hero-note">
             <span aria-hidden="true">✓</span>
             Reklamsız, sade ve kontrolü sende.
@@ -153,9 +149,7 @@ export default function Home() {
           Davet kodun varsa koleksiyonunu birkaç dakika içinde oluşturmaya
           başlayabilirsin.
         </p>
-        <Link className="primary-button" href="/invite">
-          LinkList’e katıl
-        </Link>
+        <LandingFooterAction />
       </section>
     </main>
   );

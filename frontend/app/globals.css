@@ -244,4 +244,16 @@ body{font-size:15px;line-height:1.5}
 /* Son tipografi önceliği */
 .profile-copy h1,.collection-title-row h1,.collection-info h3,.collections-head h2,.product-copy h3,.product-detail-info h2,.drawer-body h2,.personal-note p,.empty-list-state h2,.manual-intro h1,.mobile-detail-context span{font-family:"Inter",ui-sans-serif,system-ui,sans-serif;letter-spacing:-.025em}
 .profile-copy h1,.collection-title-row h1,.collection-info h3,.product-detail-info h2,.empty-list-state h2,.manual-intro h1{font-weight:600}
+
+/* Oturum ve ürün ekleme aksiyonları */
+.detail-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:22px}
+.detail-actions .social-actions{margin:0}
+.auth-actions-placeholder{width:300px;min-height:50px;border-radius:999px;background:linear-gradient(90deg,var(--soft) 25%,#f5f1ea 50%,var(--soft) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite}
+.auth-cta-placeholder{display:inline-flex;width:150px;border-color:transparent;background:#47413e}
+
+@media(max-width:760px){
+  .detail-actions{align-items:stretch;flex-direction:column}
+  .detail-actions>.primary-button{width:100%}
+  .auth-actions-placeholder{width:100%}
+}
 .wordmark,.section-label span,.featured-list-copy strong{font-family:"Fraunces",Georgia,serif;font-weight:600;letter-spacing:-.025em}
