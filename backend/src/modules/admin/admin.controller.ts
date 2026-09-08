@@ -22,6 +22,7 @@ import {
   UpdateUserStatusDto,
 } from './admin.dto';
 import { AdminService } from './admin.service';
+import { SystemStatusService } from './system-status.service';
 
 @ApiTags('admin')
 @ApiBearerAuth()
@@ -29,7 +30,13 @@ import { AdminService } from './admin.service';
 @Roles(UserRole.ADMIN, UserRole.MODERATOR)
 @Controller('admin')
 export class AdminController {
-  constructor(private readonly admin: AdminService) {}
+  constructor(
+    private readonly admin: AdminService,
+    private readonly systemStatus: SystemStatusService,
+  ) {}
+  @Roles(UserRole.ADMIN) @Get('system') system() {
+    return this.systemStatus.getStatus().then(apiResponse);
+  }
   @Roles(UserRole.ADMIN) @Post('invites') createInvite(
     @CurrentUser() user: User,
     @Body() dto: AdminCreateInviteDto,

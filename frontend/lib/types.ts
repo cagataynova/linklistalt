@@ -92,3 +92,33 @@ export type Report = {
   targetId: string;
   reporter: { email: string; profile?: { username: string } | null };
 };
+export type SystemStatus = {
+  status: "HEALTHY" | "DEGRADED";
+  checkedAt: string;
+  windowMinutes: number;
+  api: {
+    status: "UP" | "DOWN";
+    startedAt: string;
+    uptimeSeconds: number;
+    activeRequests: number;
+    requestsLast5Minutes: number;
+    requestsPerMinute: number;
+    errorRate: number;
+    averageMs: number;
+    p50Ms: number;
+    p95Ms: number;
+    memory: { rssMb: number; heapUsedMb: number };
+    trend: Array<{
+      minute: string;
+      requestCount: number;
+      errorCount: number;
+      averageMs: number;
+      p95Ms: number;
+    }>;
+  };
+  database: {
+    status: "UP" | "DOWN";
+    latencyMs: number;
+    message?: string;
+  };
+};

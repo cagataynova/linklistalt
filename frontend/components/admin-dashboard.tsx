@@ -5,11 +5,26 @@ import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { authorizedApi } from '@/lib/api';
 import { auth } from '@/lib/firebase';
-import type { AdminInvite, AdminUser, Me, Report } from '@/lib/types';
+import type { AdminInvite, AdminUser, Me, Report, SystemStatus } from '@/lib/types';
 import { useAuth } from './auth-provider';
 
 const roleLabels: Record<AdminUser['role'], string> = { USER: 'Kullanıcı', MODERATOR: 'Moderatör', ADMIN: 'Admin' };
 const statusLabels: Record<AdminUser['status'], string> = { ACTIVE: 'Aktif', SUSPENDED: 'Askıda', DELETED: 'Silinmiş' };
+
+function formatUptime(seconds: number) {
+  const days = Math.floor(seconds / 86_400);
+  const hours = Math.floor((seconds % 86_400) / 3_600);
+  const minutes = Math.floor((seconds % 3_600) / 60);
+  if (days) return `${days}g ${hours}sa`;
+  if (hours) return `${hours}sa ${minutes}dk`;
+  return `${minutes}dk`;
+}
+
+function responseTone(milliseconds: number) {
+  if (milliseconds <= 400) return 'good';
+  if (milliseconds <= 1_000) return 'warning';
+  return 'critical';
+}
 
 export function AdminDashboard() {
   const { user, loading: authLoading } = useAuth();
@@ -17,6 +32,9 @@ export function AdminDashboard() {
   const [invites, setInvites] = useState<AdminInvite[]>([]);
   const [reports, setReports] = useState<Report[]>([]);
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [system, setSystem] = useState<SystemStatus | null>(null);
+  const [systemMessage, setSystemMessage] = useState('');
+  const [systemLoading, setSystemLoading] = useState(false);
   const [createdCode, setCreatedCode] = useState('');
   const [query, setQuery] = useState('');
   const [message, setMessage] = useState('');
@@ -53,11 +71,33 @@ export function AdminDashboard() {
     }
   }, []);
 
+  const refreshSystem = useCallback(async () => {
+    setSystemLoading(true);
+    setSystemMessage('');
+    try {
+      setSystem(await authorizedApi<SystemStatus>('/admin/system'));
+    } catch (error) {
+      setSystemMessage(error instanceof Error ? error.message : 'Sistem durumu alınamadı.');
+    } finally {
+      setSystemLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (authLoading || !user) return;
     const timer = window.setTimeout(() => void refresh(), 0);
     return () => window.clearTimeout(timer);
   }, [authLoading, refresh, user]);
+
+  useEffect(() => {
+    if (me?.role !== 'ADMIN') return;
+    const firstRefresh = window.setTimeout(() => void refreshSystem(), 0);
+    const interval = window.setInterval(() => void refreshSystem(), 30_000);
+    return () => {
+      window.clearTimeout(firstRefresh);
+      window.clearInterval(interval);
+    };
+  }, [me?.role, refreshSystem]);
 
   async function runAction(key: string, action: () => Promise<void>) {
     setBusyAction(key);
@@ -128,6 +168,20 @@ export function AdminDashboard() {
     {message && <div className="admin-alert" role="alert"><span>{message}</span><button className="text-button" onClick={() => void refresh()}>Yenile</button></div>}
     {notice && <div className="admin-notice" role="status"><span>{notice}</span><button className="text-button" onClick={() => setNotice('')}>Kapat</button></div>}
     <section className="admin-summary" aria-label="Yönetim özeti"><div><strong>{users.filter((account) => account.status === 'ACTIVE').length}</strong><span>aktif kullanıcı</span></div><div><strong>{users.filter((account) => account.role === 'ADMIN' && account.status === 'ACTIVE').length}</strong><span>aktif admin</span></div><div><strong>{reports.length}</strong><span>açık şikâyet</span></div><div><strong>{invites.filter((invite) => invite.active).length}</strong><span>aktif davet</span></div></section>
+    {me?.role === 'ADMIN' && <section className="system-panel" aria-labelledby="system-status-title" aria-busy={systemLoading}>
+      <div className="system-heading"><div><div className="eyebrow">CANLI GÖZLEM</div><h2 id="system-status-title">Servis durumu</h2><p>API süreci ve Neon bağlantısı 30 saniyede bir kontrol edilir. Trafik ölçümleri son 5 dakikayı gösterir.</p></div><div className="system-heading-actions">{system && <span className={`service-state ${system.status === 'HEALTHY' ? 'state-up' : 'state-down'}`}><i />{system.status === 'HEALTHY' ? 'Tüm sistemler çalışıyor' : 'Kontrol gerekli'}</span>}<button className="secondary-button" disabled={systemLoading} onClick={() => void refreshSystem()}>{systemLoading ? 'Kontrol ediliyor…' : 'Şimdi yenile'}</button></div></div>
+      {systemMessage && !system && <div className="system-unavailable" role="alert"><span>{systemMessage}</span><button className="text-button" onClick={() => void refreshSystem()}>Tekrar dene</button></div>}
+      {system ? <>
+        <div className="service-row"><div><span className={`service-dot ${system.api.status === 'UP' ? 'dot-up' : 'dot-down'}`} /><span><strong>LinkList API</strong><small>Render · çalışma süresi {formatUptime(system.api.uptimeSeconds)}</small></span></div><b>{system.api.status === 'UP' ? 'Çalışıyor' : 'Kesinti'}</b></div>
+        <div className="service-row"><div><span className={`service-dot ${system.database.status === 'UP' ? 'dot-up' : 'dot-down'}`} /><span><strong>PostgreSQL</strong><small>Neon · canlı bağlantı kontrolü</small></span></div><b>{system.database.status === 'UP' ? `${system.database.latencyMs} ms` : 'Erişilemiyor'}</b></div>
+        <div className="metric-grid" aria-label="Son 5 dakika performans ölçümleri"><div><span>P95 yanıt</span><strong className={`metric-${responseTone(system.api.p95Ms)}`}>{system.api.p95Ms} ms</strong><small>İsteklerin %95&apos;i</small></div><div><span>Ortalama yanıt</span><strong className={`metric-${responseTone(system.api.averageMs)}`}>{system.api.averageMs} ms</strong><small>P50: {system.api.p50Ms} ms</small></div><div><span>İstek yoğunluğu</span><strong>{system.api.requestsPerMinute}/dk</strong><small>{system.api.requestsLast5Minutes} toplam istek</small></div><div><span>Sunucu hatası</span><strong className={system.api.errorRate ? 'metric-critical' : 'metric-good'}>%{system.api.errorRate}</strong><small>HTTP 5xx oranı</small></div><div><span>Aktif istek</span><strong>{system.api.activeRequests}</strong><small>Şu anda işleniyor</small></div><div><span>Bellek</span><strong>{system.api.memory.rssMb} MB</strong><small>Heap {system.api.memory.heapUsedMb} MB</small></div></div>
+        <div className="traffic-chart"><div className="traffic-chart-heading"><span>15 dakikalık istek akışı</span><small>Son kontrol {new Intl.DateTimeFormat('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(new Date(system.checkedAt))}</small></div><div className="traffic-bars">{system.api.trend.map((point) => {
+          const peak = Math.max(1, ...system.api.trend.map((entry) => entry.requestCount));
+          return <span key={point.minute} className={point.errorCount ? 'has-error' : ''} style={{ height: `${Math.max(7, (point.requestCount / peak) * 100)}%` }} title={`${new Intl.DateTimeFormat('tr-TR', { hour: '2-digit', minute: '2-digit' }).format(new Date(point.minute))}: ${point.requestCount} istek, ${point.p95Ms} ms p95`}><i className="sr-only">{point.requestCount} istek</i></span>;
+        })}</div></div>
+        {systemMessage && <p className="system-stale" role="status">Son yenileme başarısız: {systemMessage}. Son başarılı ölçüm gösteriliyor.</p>}
+      </> : systemLoading && <div className="system-loading"><div className="spinner" /><span>Servisler kontrol ediliyor…</span></div>}
+    </section>}
     <section className="admin-grid">
       <article className="admin-panel"><h2>Davet kodları</h2>{me?.role === 'ADMIN' && <form className="inline-form" onSubmit={createInvite}><label><span className="sr-only">Etiket</span><input name="label" placeholder="Etiket" maxLength={80} /></label><label><span className="sr-only">Kullanım kotası</span><input name="maxUses" type="number" min="1" max="10000" defaultValue="10" /></label><button className="primary-button" disabled={busyAction === 'invite'}>{busyAction === 'invite' ? 'Oluşturuluyor…' : 'Oluştur'}</button></form>}{createdCode && <p className="secret-result">Yeni kod: <strong>{createdCode}</strong><br />Bu değer tekrar gösterilmez.</p>}<div className="table-list">{invites.length ? invites.map((invite) => <div key={invite.id}><span>{invite.prefix}… {invite.label}</span><b>{invite.useCount}/{invite.maxUses}</b></div>) : <p>Henüz davet kodu yok.</p>}</div></article>
       <article className="admin-panel"><h2>Açık şikâyetler</h2><div className="table-list">{reports.length ? reports.map((report) => <div key={report.id}><span>{report.targetType}: {report.reason}</span><b>{report.status}</b></div>) : <p>Açık şikâyet yok.</p>}</div></article>
