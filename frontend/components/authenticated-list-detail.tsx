@@ -40,7 +40,7 @@ export function AuthenticatedListDetail({ id }: { id: string }) {
         <div className="spinner" aria-label="Liste yükleniyor" />
       </main>
     );
-  if (list) return <ListDetail list={list} />;
+  if (list) return <ListDetail list={list} ownerView />;
   return (
     <main className="state-page">
       <div className="eyebrow">GİZLİ İÇERİK</div>

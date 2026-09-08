@@ -1,11 +1,94 @@
 export type ApiEnvelope<T> = { data: T; meta?: { nextCursor?: string | null } };
 export type ApiError = { code: string; message: string; requestId?: string };
-export type ProductImage = { id?: string; publicUrl: string; altText?: string | null };
-export type Product = { id: string; ownerId?: string; name: string; brand?: string | null; price?: string | null; currency: string; sourceUrl: string; note?: string | null; images: ProductImage[] };
-export type List = { id: string; title: string; description?: string | null; category: string; visibility: 'PUBLIC' | 'UNLISTED' | 'PRIVATE'; shareToken?: string | null; owner?: { id: string; profile?: { username: string; displayName: string; avatarUrl?: string | null } | null }; listProducts?: Array<{ product: Product }>; _count?: { likes: number; listProducts: number } };
-export type Profile = { id: string; username: string; displayName: string; bio?: string | null; avatarUrl?: string | null; user: { id: string; _count: { followers: number; following: number }; lists: List[] } };
-export type Me = { id: string; email: string; role: 'USER' | 'MODERATOR' | 'ADMIN'; profile: Omit<Profile, 'user'> };
-export type ExtractedProduct = { name?: string; brand?: string; price?: string; currency: string; sourceUrl: string; images: string[] };
-export type AdminInvite = { id: string; prefix: string; label?: string | null; maxUses: number; useCount: number; active: boolean; expiresAt?: string | null };
-export type AdminUser = { id: string; email: string; emailVerified: boolean; role: Me['role']; status: 'ACTIVE' | 'SUSPENDED' | 'DELETED'; createdAt: string; profile?: { username: string; displayName: string; avatarUrl?: string | null } | null };
-export type Report = { id: string; reason: string; details?: string | null; status: string; targetType: string; targetId: string; reporter: { email: string; profile?: { username: string } | null } };
+export type ProductImage = {
+  id?: string;
+  publicUrl: string;
+  altText?: string | null;
+};
+export type Product = {
+  id: string;
+  ownerId?: string;
+  name: string;
+  brand?: string | null;
+  price?: string | null;
+  currency: string;
+  sourceUrl: string;
+  note?: string | null;
+  images: ProductImage[];
+};
+export type List = {
+  id: string;
+  title: string;
+  description?: string | null;
+  category: string;
+  visibility: "PUBLIC" | "UNLISTED" | "PRIVATE";
+  shareToken?: string | null;
+  owner?: {
+    id: string;
+    profile?: {
+      username: string;
+      displayName: string;
+      avatarUrl?: string | null;
+    } | null;
+  };
+  listProducts?: Array<{ product: Product }>;
+  _count?: { likes: number; listProducts: number };
+};
+export type Profile = {
+  id: string;
+  username: string;
+  displayName: string;
+  bio?: string | null;
+  avatarUrl?: string | null;
+  user: {
+    id: string;
+    _count: { followers: number; following: number };
+    lists: List[];
+  };
+};
+export type Me = {
+  id: string;
+  email: string;
+  role: "USER" | "MODERATOR" | "ADMIN";
+  profile: Omit<Profile, "user">;
+};
+export type DashboardData = { me: Me; lists: List[] };
+export type ExtractedProduct = {
+  name?: string;
+  brand?: string;
+  price?: string;
+  currency: string;
+  sourceUrl: string;
+  images: string[];
+};
+export type AdminInvite = {
+  id: string;
+  prefix: string;
+  label?: string | null;
+  maxUses: number;
+  useCount: number;
+  active: boolean;
+  expiresAt?: string | null;
+};
+export type AdminUser = {
+  id: string;
+  email: string;
+  emailVerified: boolean;
+  role: Me["role"];
+  status: "ACTIVE" | "SUSPENDED" | "DELETED";
+  createdAt: string;
+  profile?: {
+    username: string;
+    displayName: string;
+    avatarUrl?: string | null;
+  } | null;
+};
+export type Report = {
+  id: string;
+  reason: string;
+  details?: string | null;
+  status: string;
+  targetType: string;
+  targetId: string;
+  reporter: { email: string; profile?: { username: string } | null };
+};

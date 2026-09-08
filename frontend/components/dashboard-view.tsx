@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { ApiRequestError, authorizedApi } from "@/lib/api";
-import type { List, Me } from "@/lib/types";
+import type { DashboardData, List, Me } from "@/lib/types";
 import { useAuth } from "./auth-provider";
 import { ListCard } from "./list-card";
 import { DeleteAccount } from "./delete-account";
@@ -21,12 +21,9 @@ export function DashboardView() {
     setDataLoading(true);
     setMessage("");
     try {
-      const [profile, rows] = await Promise.all([
-        authorizedApi<Me>("/me"),
-        authorizedApi<List[]>("/lists"),
-      ]);
-      setMe(profile);
-      setLists(rows);
+      const dashboard = await authorizedApi<DashboardData>("/me/dashboard");
+      setMe(dashboard.me);
+      setLists(dashboard.lists);
     } catch (error) {
       if (
         error instanceof ApiRequestError &&
@@ -107,7 +104,11 @@ export function DashboardView() {
         {lists.length ? (
           <div className="collection-stack">
             {lists.map((list) => (
-              <ListCard key={list.id} list={list} />
+              <ListCard
+                key={list.id}
+                list={list}
+                href={`/dashboard/lists/${list.id}`}
+              />
             ))}
           </div>
         ) : (

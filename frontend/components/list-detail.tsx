@@ -3,7 +3,13 @@ import type { List } from "@/lib/types";
 import { ProductCard } from "./product-card";
 import { SocialActions } from "./social-actions";
 
-export function ListDetail({ list }: { list: List }) {
+export function ListDetail({
+  list,
+  ownerView = false,
+}: {
+  list: List;
+  ownerView?: boolean;
+}) {
   const products = list.listProducts?.map((row) => row.product) ?? [];
   const addProductHref = `/dashboard/products/new?listId=${encodeURIComponent(list.id)}`;
 
@@ -20,7 +26,9 @@ export function ListDetail({ list }: { list: List }) {
           )}
         </div>
         <h1>{list.title}</h1>
-        <p>{list.description ?? "Bu liste için henüz bir açıklama eklenmemiş."}</p>
+        <p>
+          {list.description ?? "Bu liste için henüz bir açıklama eklenmemiş."}
+        </p>
         <div className="stats">
           <span>
             <b>{products.length}</b> ürün
@@ -33,13 +41,21 @@ export function ListDetail({ list }: { list: List }) {
           <Link className="primary-button" href={addProductHref}>
             Ürün ekle
           </Link>
-          <SocialActions targetType="LIST" targetId={list.id} listId={list.id} />
+          <SocialActions
+            targetType="LIST"
+            targetId={list.id}
+            listId={list.id}
+          />
         </div>
       </header>
       {products.length ? (
         <section className="product-grid">
           {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
+            <ProductCard
+              key={product.id}
+              product={product}
+              href={ownerView ? `/dashboard/products/${product.id}` : undefined}
+            />
           ))}
         </section>
       ) : (

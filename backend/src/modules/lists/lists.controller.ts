@@ -24,6 +24,19 @@ import { ListsService } from './lists.service';
 @Controller()
 export class ListsController {
   constructor(private readonly lists: ListsService) {}
+  @ApiBearerAuth() @UseGuards(AppUserGuard) @Get('me/dashboard') dashboard(
+    @CurrentUser() user: User,
+    @Query('cursor') cursor?: string,
+  ) {
+    return this.lists
+      .dashboard(user.id, cursor)
+      .then(({ me, lists }) =>
+        apiResponse(
+          { me, lists: lists.slice(0, 20) },
+          { nextCursor: lists.length > 20 ? lists[19].id : null },
+        ),
+      );
+  }
   @ApiBearerAuth() @UseGuards(AppUserGuard) @Get('lists') mine(
     @CurrentUser() user: User,
     @Query('cursor') cursor?: string,

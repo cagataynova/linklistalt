@@ -36,7 +36,10 @@ export class FirebaseService {
     if (this.config.get<string>('AUTH_MODE') === 'test')
       return this.verifyTestToken(token);
     try {
-      const decoded = await getAuth().verifyIdToken(token, true);
+      // Signature and expiry validation use Google's cached public keys. Account
+      // suspension/deletion is enforced from PostgreSQL by AppUserGuard, so an
+      // extra Firebase revocation lookup on every API request is unnecessary.
+      const decoded = await getAuth().verifyIdToken(token);
       if (!decoded.email) throw new Error('missing-email');
       return {
         uid: decoded.uid,

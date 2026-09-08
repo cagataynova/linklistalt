@@ -22,6 +22,21 @@ const detailInclude = {
   _count: { select: { likes: true, listProducts: true } },
 };
 
+const summaryInclude = {
+  listProducts: {
+    take: 4,
+    orderBy: { position: 'asc' as const },
+    include: {
+      product: {
+        include: {
+          images: { take: 1, orderBy: { position: 'asc' as const } },
+        },
+      },
+    },
+  },
+  _count: { select: { likes: true, listProducts: true } },
+};
+
 @Injectable()
 export class ListsService {
   constructor(
@@ -34,8 +49,18 @@ export class ListsService {
       orderBy: { updatedAt: 'desc' },
       take: 21,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-      include: detailInclude,
+      include: summaryInclude,
     });
+  }
+  async dashboard(ownerId: string, cursor?: string) {
+    const [me, lists] = await Promise.all([
+      this.prisma.user.findUniqueOrThrow({
+        where: { id: ownerId },
+        include: { profile: true },
+      }),
+      this.listMine(ownerId, cursor),
+    ]);
+    return { me, lists };
   }
   create(ownerId: string, dto: CreateListDto) {
     return this.prisma.list.create({

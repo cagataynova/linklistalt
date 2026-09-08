@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 enum UserRole {
@@ -79,12 +80,12 @@ model User {
   blocksInitiated   Block[]            @relation("BlockSource")
   blocksReceived    Block[]            @relation("BlockTarget")
   reports           Report[]           @relation("ReportAuthor")
-  invitesCreated    InviteCode[]        @relation("InviteCreator")
+  invitesCreated    InviteCode[]       @relation("InviteCreator")
   redemptions       InviteRedemption[]
-  moderationActions ModerationAction[]  @relation("ModerationActor")
-  auditLogs         AuditLog[]          @relation("AuditActor")
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
+  moderationActions ModerationAction[] @relation("ModerationActor")
+  auditLogs         AuditLog[]         @relation("AuditActor")
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
   deletedAt         DateTime?
 
   @@index([status, createdAt])

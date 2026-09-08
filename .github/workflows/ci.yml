@@ -21,6 +21,7 @@ jobs:
           --health-interval 5s --health-timeout 5s --health-retries 10
     env:
       DATABASE_URL: postgresql://linklist:linklist@localhost:5432/linklist_test?schema=public
+      DIRECT_URL: postgresql://linklist:linklist@localhost:5432/linklist_test?schema=public
       NODE_ENV: test
       AUTH_MODE: test
       SIGNUP_TICKET_SECRET: ci-only-signup-secret-with-at-least-32-characters

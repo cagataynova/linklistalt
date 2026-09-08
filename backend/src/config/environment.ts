@@ -7,6 +7,7 @@ const environmentSchema = z
       .default('development'),
     PORT: z.coerce.number().int().positive().default(3001),
     DATABASE_URL: z.string().min(1),
+    DIRECT_URL: z.string().min(1),
     FRONTEND_ORIGINS: z.string().default('http://localhost:3000'),
     AUTH_MODE: z.enum(['firebase', 'emulator', 'test']).default('firebase'),
     FIREBASE_PROJECT_ID: z.string().default('linklist-local'),
